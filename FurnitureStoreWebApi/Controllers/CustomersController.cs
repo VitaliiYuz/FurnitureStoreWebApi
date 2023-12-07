@@ -6,7 +6,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FurnitureStoreWebApi.Models;
+using FurnitureStoreWebApi.Interfaces;
+using FurnitureStoreWebApi.Dto;
 using AutoMapper;
+using System.Data;
+using System.Numerics;
 
 namespace FurnitureStoreWebApi.Controllers
 {
@@ -15,124 +19,117 @@ namespace FurnitureStoreWebApi.Controllers
     public class CustomersController : ControllerBase
     {
         private readonly FurnitureStoreContext _context;
+        private readonly IMapper _mapper;
+        private readonly ICustomerRepository _customerRepository;
 
-        public CustomersController(FurnitureStoreContext context)
+        public CustomersController(FurnitureStoreContext context, IMapper mapper, ICustomerRepository customerRepository)
         {
             _context = context;
+            _mapper = mapper;
+            _customerRepository = customerRepository;
         }
 
         // GET: api/Customers
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Customer>>> GetCustomers()
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IQueryable<CustomerDto>))]
+        public IActionResult GetAllCustomers()
         {
-          if (_context.Customers == null)
-          {
-              return NotFound();
-          }
-            return await _context.Customers.ToListAsync();
+            var customers = _customerRepository.GetAllCustomers();
+
+            var responseList = _mapper.Map<List<CustomerDto>>(customers);
+            return Ok(responseList);
         }
 
         // GET: api/Customers/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Customer>> GetCustomer(int id)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CustomerDto))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult GetCustomerById(int id)
         {
-          if (_context.Customers == null)
-          {
-              return NotFound();
-          }
-            var customer = await _context.Customers.FindAsync(id);
-
-            if (customer == null)
-            {
+            if (!_customerRepository.CustomerExists(id))
                 return NotFound();
-            }
 
-            return customer;
+            var customer = _customerRepository.GetCustomerById(id);
+            var response = _mapper.Map<CustomerDto>(customer);
+
+            return Ok(response);
         }
 
         // PUT: api/Customers/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutCustomer(int id, Customer customer)
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ValidationProblemDetails))]
+
+        public IActionResult UpdateCustomer([FromRoute] int id, [FromBody] CustomerDto customerDto)
         {
-            if (id != customer.CustomerId)
-            {
-                return BadRequest();
-            }
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            _context.Entry(customer).State = EntityState.Modified;
+            if (!_customerRepository.CustomerExists(id))
+                return NotFound();
 
-            try
+            var customerToUpdate = _mapper.Map<Customer>(customerDto);
+            customerToUpdate.CustomerId = id;
+
+            if (!_customerRepository.UpdateCustomer(customerToUpdate))
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!CustomerExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                throw new DataException("Something went wrong while updating");
             }
 
             return NoContent();
+
         }
 
         // POST: api/Customers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Customer>> PostCustomer(Customer customer)
+        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(CustomerDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ValidationProblemDetails))]
+        public IActionResult CreateCustomer([FromBody] CustomerDto customerDto)
         {
-          if (_context.Customers == null)
-          {
-              return Problem("Entity set 'FurnitureStoreContext.Customers'  is null.");
-          }
-            _context.Customers.Add(customer);
-            try
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var customer = _mapper.Map<Customer>(customerDto);
+
+            if (!_customerRepository.CreateCustomer(customer))
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateException)
-            {
-                if (CustomerExists(customer.CustomerId))
-                {
-                    return Conflict();
-                }
-                else
-                {
-                    throw;
-                }
+                // Handle the error when TeamId is not valid
+                return BadRequest(ModelState);
             }
 
-            return CreatedAtAction("GetCustomer", new { id = customer.CustomerId }, customer);
+            //var createdCustomerDto = _mapper.Map<CustomerDto>(customer); // Map the created Player to PlayerDto
+
+            return CreatedAtAction(nameof(GetCustomerById), new { id = customer.CustomerId }, customer);
         }
+
 
         // DELETE: api/Customers/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCustomer(int id)
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public IActionResult DeleteCustomer([FromRoute] int id)
         {
-            if (_context.Customers == null)
-            {
+            if (!_customerRepository.CustomerExists(id))
                 return NotFound();
-            }
-            var customer = await _context.Customers.FindAsync(id);
-            if (customer == null)
-            {
-                return NotFound();
-            }
 
-            _context.Customers.Remove(customer);
-            await _context.SaveChangesAsync();
+            var customerToDelete = _customerRepository.GetCustomerById(id);
+
+            if (!_customerRepository.DeleteCustomer(customerToDelete))
+            {
+                throw new DataException("Something went wrong while deleting");
+            }
 
             return NoContent();
         }
-
-        private bool CustomerExists(int id)
+        [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        private ActionResult<bool> CustomerExists([FromRoute] int id)
         {
-            return (_context.Customers?.Any(e => e.CustomerId == id)).GetValueOrDefault();
+            return _customerRepository.CustomerExists(id);
         }
     }
 }

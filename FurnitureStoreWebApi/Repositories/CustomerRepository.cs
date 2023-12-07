@@ -14,35 +14,29 @@ namespace FurnitureStoreWebApi.Repositories
         }
         public ICollection<Customer> GetAllCustomers()
         {
-            return _dataContext.Customer.ToList();
+            return _dataContext.Customers.ToList();
         }
 
         public Customer GetCustomerById(int id)
         {
-            return _dataContext.Customer.FirstOrDefault(p => p.Id == id);
+            return _dataContext.Customers.FirstOrDefault(p => p.CustomerId == id);
         }
 
         public bool CustomerExists(int id)
         {
-            return _dataContext.Customer.Any(p => p.Id == id);
+            return _dataContext.Customers.Any(p => p.CustomerId == id);
         }
 
         public bool CreateCustomer(Customer customer)
         {
-            if (!_dataContext.Any(t => t.Id = customer.CustomerId))
-            {
-                // Team with the provided TeamId does not exist, return an error
-                return false;
-            }
             _dataContext.Add(customer);
             return Save();
         }
 
         public bool UpdateCustomer(Customer customer)
         {
-            if (!_dataContext.Any(t => t.Id == customer.CustomerId))
+            if (!_dataContext.Customers.Any(t => t.CustomerId == customer.CustomerId))
             {
-                // Team with the provided TeamId does not exist, return an error
                 return false;
             }
             _dataContext.Update(customer);
