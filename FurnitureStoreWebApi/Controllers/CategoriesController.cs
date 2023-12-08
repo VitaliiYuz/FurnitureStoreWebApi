@@ -16,40 +16,40 @@ namespace FurnitureStoreWebApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductsController : ControllerBase
+    public class CategoriesController : ControllerBase
     {
         private readonly FurnitureStoreContext _context;
         private readonly IMapper _mapper;
-        private readonly IProductRepository _productRepository;
+        private readonly ICategoryRepository _categoryRepository;
 
-        public ProductsController(FurnitureStoreContext context, IMapper mapper, IProductRepository productRepository)
+        public CategoriesController(FurnitureStoreContext context, IMapper mapper, ICategoryRepository categoryRepository)
         {
             _context = context;
             _mapper = mapper;
-            _productRepository = productRepository;
+            _categoryRepository = categoryRepository;
         }
 
-        
-        [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IQueryable<ProductDto>))]
-        public IActionResult GetAllProducts()
-        {
-            var products = _productRepository.GetAllProducts();
 
-            var responseList = _mapper.Map<List<ProductDto>>(products);
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IQueryable<CategoryDto>))]
+        public IActionResult GetAllCategories()
+        {
+            var category = _categoryRepository.GetAllCategories();
+
+            var responseList = _mapper.Map<List<CategoryDto>>(category);
             return Ok(responseList);
         }
 
         [HttpGet("{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ProductDto))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(CategoryDto))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult GetProductById(int id)
+        public IActionResult GetCategoryById(int id)
         {
-            if (!_productRepository.ProductExists(id))
+            if (!_categoryRepository.CategoryExists(id))
                 return NotFound();
 
-            var product = _productRepository.GetProductById(id);
-            var response = _mapper.Map<ProductDto>(product);
+            var category = _categoryRepository.GetCategoryById(id);
+            var response = _mapper.Map<CategoryDto>(category);
 
             return Ok(response);
         }
@@ -59,18 +59,18 @@ namespace FurnitureStoreWebApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ValidationProblemDetails))]
 
-        public IActionResult UpdateProduct([FromRoute] int id, [FromBody] ProductDto productDto)
+        public IActionResult UpdateCategory([FromRoute] int id, [FromBody] CategoryDto categoryDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (!_productRepository.ProductExists(id))
+            if (!_categoryRepository.CategoryExists(id))
                 return NotFound();
 
-            var productToUpdate = _mapper.Map<Product>(productDto);
-            productToUpdate.ProductId = id;
+            var categoryToUpdate = _mapper.Map<Category>(categoryDto);
+            categoryToUpdate.CategoryId = id;
 
-            if (!_productRepository.UpdateProduct(productToUpdate))
+            if (!_categoryRepository.UpdateCategory(categoryToUpdate))
             {
                 throw new DataException("Something went wrong while updating");
             }
@@ -80,36 +80,36 @@ namespace FurnitureStoreWebApi.Controllers
         }
 
         [HttpPost]
-        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ProductDto))]
+        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(CategoryDto))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ValidationProblemDetails))]
-        public IActionResult CreateProduct([FromBody] ProductDto productDto)
+        public IActionResult CreateCategory([FromBody] CategoryDto categoryDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var product = _mapper.Map<Product>(productDto);
+            var category = _mapper.Map<Category>(categoryDto);
 
-            if (!_productRepository.CreateProduct(product))
+            if (!_categoryRepository.CreateCategory(category))
             {
                 return BadRequest(ModelState);
             }
 
-            var createdProductDto = _mapper.Map<ProductDto>(product); 
+            var createdCategoryDto = _mapper.Map<CategoryDto>(category);
 
-            return CreatedAtAction(nameof(GetProductById), new { id = product.ProductId }, createdProductDto);
+            return CreatedAtAction(nameof(GetCategoryById), new { id = category.CategoryId }, createdCategoryDto);
         }
 
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public IActionResult DeleteProduct([FromRoute] int id)
+        public IActionResult DeleteCategory([FromRoute] int id)
         {
-            if (!_productRepository.ProductExists(id))
+            if (!_categoryRepository.CategoryExists(id))
                 return NotFound();
 
-            var productToDelete = _productRepository.GetProductById(id);
+            var categoryToDelete = _categoryRepository.GetCategoryById(id);
 
-            if (!_productRepository.DeleteProduct(productToDelete))
+            if (!_categoryRepository.DeleteCategory(categoryToDelete))
             {
                 throw new DataException("Something went wrong while deleting");
             }
@@ -119,9 +119,10 @@ namespace FurnitureStoreWebApi.Controllers
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        private ActionResult<bool> ProductExists([FromRoute] int id)
+        private ActionResult<bool> CategoryExists([FromRoute] int id)
         {
-            return _productRepository.ProductExists(id);
+            return _categoryRepository.CategoryExists(id);
         }
     }
 }
+

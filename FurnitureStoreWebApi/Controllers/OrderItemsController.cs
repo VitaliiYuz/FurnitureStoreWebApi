@@ -16,40 +16,40 @@ namespace FurnitureStoreWebApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ProductsController : ControllerBase
+    public class OrderItemsController : ControllerBase
     {
         private readonly FurnitureStoreContext _context;
         private readonly IMapper _mapper;
-        private readonly IProductRepository _productRepository;
+        private readonly IOrderItemRepository _orderItemRepository;
 
-        public ProductsController(FurnitureStoreContext context, IMapper mapper, IProductRepository productRepository)
+        public OrderItemsController(FurnitureStoreContext context, IMapper mapper, IOrderItemRepository orderItemRepository)
         {
             _context = context;
             _mapper = mapper;
-            _productRepository = productRepository;
+            _orderItemRepository = orderItemRepository;
         }
 
-        
-        [HttpGet]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IQueryable<ProductDto>))]
-        public IActionResult GetAllProducts()
-        {
-            var products = _productRepository.GetAllProducts();
 
-            var responseList = _mapper.Map<List<ProductDto>>(products);
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IQueryable<OrderItemDto>))]
+        public IActionResult GetAllOrderItems()
+        {
+            var orderItems = _orderItemRepository.GetAllOrderItems();
+
+            var responseList = _mapper.Map<List<OrderItemDto>>(orderItems);
             return Ok(responseList);
         }
 
         [HttpGet("{id}")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(ProductDto))]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(OrderItemDto))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public IActionResult GetProductById(int id)
+        public IActionResult GetOrderItemById(int id)
         {
-            if (!_productRepository.ProductExists(id))
+            if (!_orderItemRepository.OrderItemExists(id))
                 return NotFound();
 
-            var product = _productRepository.GetProductById(id);
-            var response = _mapper.Map<ProductDto>(product);
+            var orderItem = _orderItemRepository.GetOrderItemById(id);
+            var response = _mapper.Map<OrderItemDto>(orderItem);
 
             return Ok(response);
         }
@@ -59,18 +59,18 @@ namespace FurnitureStoreWebApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ValidationProblemDetails))]
 
-        public IActionResult UpdateProduct([FromRoute] int id, [FromBody] ProductDto productDto)
+        public IActionResult UpdateOrderItem([FromRoute] int id, [FromBody] OrderItemDto orderItemDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            if (!_productRepository.ProductExists(id))
+            if (!_orderItemRepository.OrderItemExists(id))
                 return NotFound();
 
-            var productToUpdate = _mapper.Map<Product>(productDto);
-            productToUpdate.ProductId = id;
+            var orderItemToUpdate = _mapper.Map<OrderItem>(orderItemDto);
+            orderItemToUpdate.OrderItemId = id;
 
-            if (!_productRepository.UpdateProduct(productToUpdate))
+            if (!_orderItemRepository.UpdateOrderItem(orderItemToUpdate))
             {
                 throw new DataException("Something went wrong while updating");
             }
@@ -80,36 +80,36 @@ namespace FurnitureStoreWebApi.Controllers
         }
 
         [HttpPost]
-        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(ProductDto))]
+        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(OrderItemDto))]
         [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ValidationProblemDetails))]
-        public IActionResult CreateProduct([FromBody] ProductDto productDto)
+        public IActionResult CreateOrderItem([FromBody] OrderItemDto orderItemDto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var product = _mapper.Map<Product>(productDto);
+            var orderItem = _mapper.Map<OrderItem>(orderItemDto);
 
-            if (!_productRepository.CreateProduct(product))
+            if (!_orderItemRepository.CreateOrderItem(orderItem))
             {
                 return BadRequest(ModelState);
             }
 
-            var createdProductDto = _mapper.Map<ProductDto>(product); 
+            var createdOrderItemDto = _mapper.Map<OrderItemDto>(orderItem);
 
-            return CreatedAtAction(nameof(GetProductById), new { id = product.ProductId }, createdProductDto);
+            return CreatedAtAction(nameof(GetOrderItemById), new { id = orderItem.OrderItemId }, createdOrderItemDto);
         }
 
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
-        public IActionResult DeleteProduct([FromRoute] int id)
+        public IActionResult DeleteOrderItem([FromRoute] int id)
         {
-            if (!_productRepository.ProductExists(id))
+            if (!_orderItemRepository.OrderItemExists(id))
                 return NotFound();
 
-            var productToDelete = _productRepository.GetProductById(id);
+            var orderItemToDelete = _orderItemRepository.GetOrderItemById(id);
 
-            if (!_productRepository.DeleteProduct(productToDelete))
+            if (!_orderItemRepository.DeleteOrderItem(orderItemToDelete))
             {
                 throw new DataException("Something went wrong while deleting");
             }
@@ -119,9 +119,9 @@ namespace FurnitureStoreWebApi.Controllers
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        private ActionResult<bool> ProductExists([FromRoute] int id)
+        private ActionResult<bool> OrderItemExists([FromRoute] int id)
         {
-            return _productRepository.ProductExists(id);
+            return _orderItemRepository.OrderItemExists(id);
         }
     }
 }

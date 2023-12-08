@@ -1,5 +1,8 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using Xunit.Sdk;
 
 namespace FurnitureStoreWebApi.Models;
 
@@ -20,8 +23,8 @@ public partial class Product
     public int SupplierId { get; set; }
 
     public virtual Category Category { get; set; } = null!;
-
+    [JsonIgnore]
     public virtual ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
-
+    [JsonIgnore]
     public virtual Supplier Supplier { get; set; } = null!;
 }

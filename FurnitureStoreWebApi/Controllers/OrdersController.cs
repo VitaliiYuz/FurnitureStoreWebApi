@@ -6,6 +6,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FurnitureStoreWebApi.Models;
+using FurnitureStoreWebApi.Interfaces;
+using FurnitureStoreWebApi.Dto;
+using AutoMapper;
+using System.Data;
+using System.Numerics;
 
 namespace FurnitureStoreWebApi.Controllers
 {
@@ -14,110 +19,111 @@ namespace FurnitureStoreWebApi.Controllers
     public class OrdersController : ControllerBase
     {
         private readonly FurnitureStoreContext _context;
+        private readonly IMapper _mapper;
+        private readonly IOrderRepository _orderRepository;
 
-        public OrdersController(FurnitureStoreContext context)
+        public OrdersController(FurnitureStoreContext context, IMapper mapper, IOrderRepository orderRepository)
         {
             _context = context;
+            _mapper = mapper;
+            _orderRepository = orderRepository;
         }
 
-        // GET: api/Orders
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Order>>> GetOrders()
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IQueryable<OrderDto>))]
+        public IActionResult GetAllOrders()
         {
-          if (_context.Orders == null)
-          {
-              return NotFound();
-          }
-            return await _context.Orders.ToListAsync();
+            var orders = _orderRepository.GetAllOrders();
+
+            var responseList = _mapper.Map<List<OrderDto>>(orders);
+            return Ok(responseList);
         }
 
-        // GET: api/Orders/5
+
         [HttpGet("{id}")]
-        public async Task<ActionResult<Order>> GetOrder(int id)
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(OrderDto))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public IActionResult GetOrderById(int id)
         {
-          if (_context.Orders == null)
-          {
-              return NotFound();
-          }
-            var order = await _context.Orders.FindAsync(id);
-
-            if (order == null)
-            {
+            if (!_orderRepository.OrderExists(id))
                 return NotFound();
-            }
+            
+            var order = _orderRepository.GetOrderById(id);
+            var response = _mapper.Map<OrderDto>(order);
 
-            return order;
+            return Ok(response);
         }
 
-        // PUT: api/Orders/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutOrder(int id, Order order)
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ValidationProblemDetails))]
+
+        public IActionResult UpdateOrder([FromRoute] int id, [FromBody] OrderDto orderDto)
         {
-            if (id != order.OrderId)
-            {
-                return BadRequest();
-            }
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            _context.Entry(order).State = EntityState.Modified;
+            if (!_orderRepository.OrderExists(id))
+                return NotFound();
 
-            try
+            var orderToUpdate = _mapper.Map<Order>(orderDto);
+            orderToUpdate.OrderId = id;
+
+            if (!_orderRepository.UpdateOrder(orderToUpdate))
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!OrderExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                throw new DataException("Something went wrong while updating");
             }
 
             return NoContent();
+
         }
 
-        // POST: api/Orders
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Order>> PostOrder(Order order)
+        [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(OrderDto))]
+        [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ValidationProblemDetails))]
+        public IActionResult CreateOrder([FromBody] OrderDto orderDto)
         {
-          if (_context.Orders == null)
-          {
-              return Problem("Entity set 'FurnitureStoreContext.Orders'  is null.");
-          }
-            _context.Orders.Add(order);
-            await _context.SaveChangesAsync();
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
 
-            return CreatedAtAction("GetOrder", new { id = order.OrderId }, order);
+            var order = _mapper.Map<Order>(orderDto);
+
+            if (!_orderRepository.CreateOrder(order))
+            {
+                
+                return BadRequest(ModelState);
+            }
+
+            var createdOrderDto = _mapper.Map<OrderDto>(order); 
+
+            return CreatedAtAction(nameof(GetOrderById), new { id = order.OrderId }, createdOrderDto);
         }
 
-        // DELETE: api/Orders/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteOrder(int id)
-        {
-            if (_context.Orders == null)
-            {
-                return NotFound();
-            }
-            var order = await _context.Orders.FindAsync(id);
-            if (order == null)
-            {
-                return NotFound();
-            }
 
-            _context.Orders.Remove(order);
-            await _context.SaveChangesAsync();
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        public IActionResult DeleteOrder([FromRoute] int id)
+        {
+            if (!_orderRepository.OrderExists(id))
+                return NotFound();
+
+            var orderToDelete = _orderRepository.GetOrderById(id);
+
+            if (!_orderRepository.DeleteOrder(orderToDelete))
+            {
+                throw new DataException("Something went wrong while deleting");
+            }
 
             return NoContent();
         }
-
-        private bool OrderExists(int id)
+        [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(bool))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        private ActionResult<bool> OrderExists([FromRoute] int id)
         {
-            return (_context.Orders?.Any(e => e.OrderId == id)).GetValueOrDefault();
+            return _orderRepository.OrderExists(id);
         }
     }
 }

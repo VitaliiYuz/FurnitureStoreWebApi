@@ -14,7 +14,7 @@ namespace FurnitureStoreWebApi.Repositories
         }
         public ICollection<Category> GetAllCategories() 
         {
-            return _dataContext.Categories.Include(n=>n.Name).ToList();
+            return _dataContext.Categories.ToList();
         }
         public Category GetCategoryById(int id)
         {

@@ -96,13 +96,12 @@ namespace FurnitureStoreWebApi.Controllers
 
             if (!_customerRepository.CreateCustomer(customer))
             {
-                // Handle the error when TeamId is not valid
                 return BadRequest(ModelState);
             }
 
-            //var createdCustomerDto = _mapper.Map<CustomerDto>(customer); // Map the created Player to PlayerDto
+            var createdCustomerDto = _mapper.Map<CustomerDto>(customer);
 
-            return CreatedAtAction(nameof(GetCustomerById), new { id = customer.CustomerId }, customer);
+            return CreatedAtAction(nameof(GetCustomerById), new { id = customer.CustomerId }, createdCustomerDto);
         }
 
 
