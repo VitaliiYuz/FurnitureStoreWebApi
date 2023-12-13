@@ -1,14 +1,31 @@
 ﻿<Window x:Class="FurnitureStoreWPF.MainWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:FurnitureStoreWPF"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Furniture Store" Height="506" Width="1010">
     <Grid>
-        <DataGrid x:Name="dataGrid" AutoGenerateColumns="True" />
+        <DataGrid x:Name="productGrid" AutoGenerateColumns="False" Margin="10,10,10,50">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ProductId" Binding="{Binding ProductId}" Visibility="Hidden" />
+                <DataGridTextColumn Header="Назва" Binding="{Binding Name}" />
+                <DataGridTextColumn Header="Опис" Binding="{Binding Description}" />
+                <DataGridTextColumn Header="Категорія" Binding="{Binding CategoryName}" />
+                <DataGridTextColumn Header="Ціна" Binding="{Binding Price}" />
+                <DataGridTextColumn Header="Кількість" Binding="{Binding StockQuantity}" />
+                <DataGridTextColumn Header="SupplierId" Binding="{Binding SupplierId}" />
+                <DataGridTemplateColumn Header="Дії">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Button Content="Редагувати" Click="EditButton_Click"/>
+                                <Button Content="Видалити" Click="DeleteButton_Click"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
 
-
+        <Button Content="Оновити" HorizontalAlignment="Left" VerticalAlignment="Bottom" Width="120" Height="30" Margin="64,0,0,10" Click="UpdateButtonClick"/>
+        <Button Content="Додати продукт" HorizontalAlignment="Right" VerticalAlignment="Bottom" Width="120" Height="30" Margin="0,0,66,10" Click="AddProductButton_Click"/>
     </Grid>
 </Window>
