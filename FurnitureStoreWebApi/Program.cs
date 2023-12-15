@@ -22,6 +22,18 @@ builder.Services.AddDbContext<FurnitureStoreContext>(options => options.UseSqlSe
 builder.Configuration.GetConnectionString("FurnitureStoreDB")
 ));
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+// Add CORS configuration
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", builder =>
+    {
+        builder.WithOrigins("http://localhost:5175")
+               .AllowAnyHeader()
+               .AllowAnyMethod();
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -49,6 +61,7 @@ app.UseExceptionHandler(options => {
         }
     });
 });
+app.UseCors("AllowAny");
 
 app.UseHttpsRedirection();
 
